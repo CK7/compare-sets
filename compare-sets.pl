@@ -10,14 +10,15 @@ use Bio::SeqIO;
 # To run this script you'll need to have the MUMmer package installed on your system (http://mummer.sourceforge.net/) and also bioperl.
 #
 # Written by Itai Sharon, itai.sharon@gmail.com (4/21/13).
+# v1.01 (5/6/18): prepared for publication.
 ########################################################################################################################################
-($#ARGV >= 5) || die "\nUsage: $0 -1 <set1-scafs> {-2 <set2-scafs> | -a2 <seq-file>} -o <out-prefix> [--silent] [-p <% identity threshold>\n\n";
+($#ARGV >= 5) || die "\nUsage: $0 -1 <set1-scafs> -2 <set2-scafs> -o <out-prefix> [--silent] [-p <% identity threshold>]\n\n";
 
 # Change the path according to the path in your system
 my $nucmer = 'nucmer';
 my $show_coords = 'show-coords';
 
-my ($set1_scafs_file, $set2_scafs_file, $set2_seq_pull_file, $out_prefix) = (undef, undef, undef);
+my ($set1_scafs_file, $set2_scafs_file, $out_prefix) = (undef, undef, undef);
 my $verbose = 1;
 my $pidentity_ovlp = 96;
 
@@ -28,9 +29,6 @@ while($#ARGV > -1) {
 	}
 	elsif($flag eq '-2') {
 		$set2_scafs_file = shift(@ARGV);
-	}
-	elsif($flag eq '-a2') {
-		$set2_seq_pull_file = shift(@ARGV);
 	}
 	elsif($flag eq '-o') {
 		$out_prefix = shift(@ARGV);
@@ -45,15 +43,9 @@ while($#ARGV > -1) {
 		die "\nUnknown option: $flag\n\n";
 	}
 }
-defined($set1_scafs_file) || die "\nFirst (-1) set of scaffolds was not specified\n\n";
-(defined($set2_scafs_file) || defined($set2_seq_pull_file)) || die "\nsecond set (-2) or pull (-a2) of scaffolds was not specified\n\n";
-(!defined($set2_scafs_file) || !defined($set2_seq_pull_file)) || die "\nBoth second set (-2) and pull (-a2) of scaffolds were specified - only one allowed\n\n";
+defined($set1_scafs_file) || die "\nFirst set of scaffolds was not specified (-1)\n\n";
+defined($set2_scafs_file) || die "\nsecond set of scaffolds was not specified (-2)\n\n";
 defined($out_prefix) || die "\nOutput prefix (-o) was not specified\n\n";
-
-if(defined($set2_seq_pull_file)) {
-	$set2_scafs_file = "$out_prefix.set2.fna";
-	search_for_set2_scafs();
-}
 
 my ($delta_file, $coords_file, $report_file, $log_file) = ("$out_prefix.delta", "$out_prefix.coords", "$out_prefix.report.txt", "$out_prefix.log");
 
@@ -111,7 +103,7 @@ foreach my $scaf (keys %set1_scafs) {
 }
 
 print STDERR "$total_covered/$total (", (int(1000*$total_covered/$total)/10), "\%) are covered in $set1_scafs_file\n";
-print OUT "$total_covered/$total (", (int(1000*$total_covered/$total)/10), "\%) are covered in $set1_scafs_file\n";
+print OUT "\n$total_covered/$total (", (int(1000*$total_covered/$total)/10), "\%) are covered in $set1_scafs_file\n";
 
 print OUT "\n### $set2_scafs_file ###\n\n";
 ($total, $total_covered) = (0, 0);
@@ -127,29 +119,3 @@ foreach my $scaf (keys %set2_scafs) {
 print STDERR "$total_covered/$total (", (int(1000*$total_covered/$total)/10), "\%) are covered in $set2_scafs_file\n";
 print OUT "\n$total_covered/$total (", (int(1000*$total_covered/$total)/10), "\%) are covered in $set2_scafs_file\n";
 close(OUT);
-
-########################################################################################################################################
-sub search_for_set2_scafs {
-	my $blast_file = "$out_prefix.m8";
-	my $set2_scaf_list = "$set2_scafs_file.list";
-
-	print STDERR "Blasting $set1_scafs_file agaainst $set2_seq_pull_file ... " if($verbose);
-	system("blastall -p blastn -d $set2_seq_pull_file -i $set1_scafs_file -F F -r 2 -q -3 -e 1e-50 -o $blast_file -m 8 -a 3");
-	print STDERR "ok\n" if($verbose);
-	print STDERR "Extracting sequences ... \n" if($verbose);
-	my %scafs = ();
-	open(IN, $blast_file) || die "Fatal error: could not read blast file $blast_file\n\n";
-	while(<IN>) {
-		my ($scaf, $scaf2) = split(/\t/);
-		$scafs{$scaf2} = 1;
-	}
-	close(IN);
-
-	open(OUT, ">$set2_scaf_list") || die "Fatal error: could not write to $set2_scaf_list\n\n";
-	foreach my $scaf (keys %scafs) {
-		print OUT "$scaf\n";
-	}
-	close(OUT);
-	system("fastacmd -d $set2_seq_pull_file -i $set2_scaf_list > $set2_scafs_file");
-	print STDERR "ok, ", scalar(keys %scafs), " sequences found and written to $set2_scafs_file\n" if($verbose);
-}
