@@ -1,5 +1,5 @@
 # compare-sets
-The program compares two sets of DNA sequences (provided as FASTA files) and returns the percent of sequences in each set that align to sequences in the other set. It also provides alignment information for each sequence.
+The program compares two sets of DNA sequences (provided as FASTA files) and returns the percent of sequences in each set that align to sequences in the other set. It also provides alignment information for each sequence. I wrote this program a while ago and later discovered this paper which was published in 2015 and takes a similar approach to genome comparison: https://academic.oup.com/nar/article/43/14/6761/2903001
 
 ## Requirements
 The program requires perl, bioperl and MUMmer (http://mummer.sourceforge.net/)
