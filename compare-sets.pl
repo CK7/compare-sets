@@ -66,7 +66,8 @@ while(my $seq = $in->next_seq) {
 	$set2_scafs{$seq->display_id} = \@temp;
 }
 
-system("$nucmer -maxmatch -c 100 -b 100 -p $out_prefix $set1_scafs_file $set2_scafs_file 2>> $log_file");
+#system("$nucmer --maxmatch -c 100 -b 100 -p $out_prefix $set1_scafs_file $set2_scafs_file 2>> $log_file");
+system("$nucmer -c 100 -b 100 -p $out_prefix $set1_scafs_file $set2_scafs_file 2>> $log_file");
 system("$show_coords -r -c -l $delta_file > $coords_file 2>> $log_file");
 
 open(IN, $coords_file) || die "\nCannot read $coords_file\n\n";
